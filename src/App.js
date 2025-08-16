@@ -7,12 +7,12 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } f
 // --- Configuration ---
 // IMPORTANT: This is a sample configuration. Replace with your actual Firebase project details.
 const firebaseConfig = {
-    apiKey: "AIzaSyBo2h0GlsG5NdCRoUioVQyVfCiaO5uxcwY", 
-    authDomain: "nailexpress-10f2f.firebaseapp.com",
-    projectId: "nailexpress-10f2f",
-    storageBucket: "nailexpress-10f2f.appspot.com",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+    authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.REACT_APP_FIREBASE_APP_ID
 };
 const getSafeAppId = () => typeof __app_id !== 'undefined' ? __app_id : 'default-nail-salon-app';
 
@@ -2444,3 +2444,4 @@ const SupplierEditModal = ({ supplier, onSave, onClose }) => {
         </div>
     );
 };
+
