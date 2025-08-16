@@ -6,16 +6,14 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } f
 
 // --- Configuration ---
 // IMPORTANT: This is a sample configuration. Replace with your actual Firebase project details.
-
 const firebaseConfig = {
-    apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-    authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.REACT_APP_FIREBASE_APP_ID
+    apiKey: "AIzaSyBo2h0GlsG5NdCRoUioVQyVfCiaO5uxcwY", 
+    authDomain: "nailexpress-10f2f.firebaseapp.com",
+    projectId: "nailexpress-10f2f",
+    storageBucket: "nailexpress-10f2f.appspot.com",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
 };
-
 const getSafeAppId = () => typeof __app_id !== 'undefined' ? __app_id : 'default-nail-salon-app';
 
 // --- Reusable Components ---
@@ -395,20 +393,14 @@ const LoginModal = ({ auth, db, onClose }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const [isSigningUp, setIsSigningUp] = useState(false);
     const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-    const handleAuthAction = async (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
         setError('');
         setIsLoggingIn(true);
         try {
-            if (isSigningUp) {
-                const cred = await createUserWithEmailAndPassword(auth, email, password);
-                await setDoc(doc(db, "users", cred.user.uid), { role: 'admin', email: cred.user.email, name: 'Admin', phone: '' });
-            } else {
-                await signInWithEmailAndPassword(auth, email, password);
-            }
+            await signInWithEmailAndPassword(auth, email, password);
             onClose();
         } catch (err) {
             setError(err.message);
@@ -424,8 +416,8 @@ const LoginModal = ({ auth, db, onClose }) => {
                 <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
                     <Icon path="M6 18L18 6M6 6l12 12" />
                 </button>
-                <h2 className="text-3xl font-bold text-center text-gray-800">{isSigningUp ? 'Create First Admin' : 'Staff Login'}</h2>
-                <form onSubmit={handleAuthAction} className="space-y-6">
+                <h2 className="text-3xl font-bold text-center text-gray-800">Nail Express login</h2>
+                <form onSubmit={handleLogin} className="space-y-6">
                     <div>
                         <label htmlFor="email-auth" className="text-sm font-medium text-gray-600">Email</label>
                         <input id="email-auth" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400" />
@@ -435,13 +427,10 @@ const LoginModal = ({ auth, db, onClose }) => {
                         <input id="password-auth" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400" />
                     </div>
                     {error && <p className="text-sm text-red-500 text-center">{error}</p>}
-                    <button type="submit" disabled={isLoggingIn} className={`w-full py-3 font-semibold text-white rounded-lg transition-colors ${isSigningUp ? 'bg-blue-500 hover:bg-blue-600' : 'bg-pink-500 hover:bg-pink-600'} disabled:bg-gray-400`}>
-                        {isLoggingIn ? 'Signing in...' : (isSigningUp ? 'Create Admin' : 'Log In')}
+                    <button type="submit" disabled={isLoggingIn} className="w-full py-3 font-semibold text-white bg-pink-500 rounded-lg transition-colors hover:bg-pink-600 disabled:bg-gray-400">
+                        {isLoggingIn ? 'Signing in...' : 'Log In'}
                     </button>
                 </form>
-                <p className="text-center text-sm">
-                    <button onClick={() => setIsSigningUp(!isSigningUp)} className="font-medium text-pink-600 hover:text-pink-500 ml-1">{isSigningUp ? 'Switch to Login' : 'Create First Admin'}</button>
-                </p>
             </div>
         </div>
     );
@@ -747,7 +736,7 @@ const ClientsBookingTab = ({ db, isAuthReady, onCalendarDayClick }) => {
 
     useEffect(() => {
         if (!isAuthReady) return;
-        const q = query(collection(db, `users`), where("role", "in", ["technician", "admin"]));
+        const q = query(collection(db, `users`), where("role", "==", "technician"));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const staff = snapshot.docs.map(doc => doc.data().name || doc.data().email).filter(Boolean);
             setTechnicians(staff);
