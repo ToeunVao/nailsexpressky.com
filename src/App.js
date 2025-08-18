@@ -3,7 +3,6 @@ import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithCustomToken, signInAnonymously, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore, collection, doc, getDoc, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, query, where, Timestamp, writeBatch, getDocs, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
-
 // --- Configuration ---
 // IMPORTANT: This is a sample configuration. Replace with your actual Firebase project details.
 const firebaseConfig = {
@@ -2447,6 +2446,7 @@ const SupplierEditModal = ({ supplier, onSave, onClose }) => {
         </div>
     );
 };
+
 
 
 
