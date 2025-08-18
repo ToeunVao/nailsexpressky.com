@@ -7,13 +7,16 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } f
 // --- Configuration ---
 // IMPORTANT: This is a sample configuration. Replace with your actual Firebase project details.
 const firebaseConfig = {
-    apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-    authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.REACT_APP_FIREBASE_APP_ID
+  apiKey: "AIzaSyAGZBJFVi_o1HeGDmjcSsmCcWxWOkuLc_4",
+  authDomain: "nailexpress-10f2f.firebaseapp.com",
+  databaseURL: "https://nailexpress-10f2f-default-rtdb.firebaseio.com",
+  projectId: "nailexpress-10f2f",
+  storageBucket: "nailexpress-10f2f.firebasestorage.app",
+  messagingSenderId: "1015991996673",
+  appId: "1:1015991996673:web:b6e8888abae83906d34b00",
+  measurementId: "G-22LFQVMGTV"
 };
+
 const getSafeAppId = () => typeof __app_id !== 'undefined' ? __app_id : 'default-nail-salon-app';
 
 // --- Reusable Components ---
@@ -2444,4 +2447,5 @@ const SupplierEditModal = ({ supplier, onSave, onClose }) => {
         </div>
     );
 };
+
 
