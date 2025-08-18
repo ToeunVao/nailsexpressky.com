@@ -11,7 +11,7 @@ const firebaseConfig = {
   authDomain: "nailexpress-10f2f.firebaseapp.com",
   databaseURL: "https://nailexpress-10f2f-default-rtdb.firebaseio.com",
   projectId: "nailexpress-10f2f",
-  storageBucket: "nailexpress-10f2f.firebasestorage.app",
+  storageBucket: "nailexpress-10f2f.appspot.com",
   messagingSenderId: "1015991996673",
   appId: "1:1015991996673:web:b6e8888abae83906d34b00",
   measurementId: "G-22LFQVMGTV"
@@ -2447,5 +2447,6 @@ const SupplierEditModal = ({ supplier, onSave, onClose }) => {
         </div>
     );
 };
+
 
 
