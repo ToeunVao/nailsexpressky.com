@@ -3,6 +3,12 @@ import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithCustomToken, signInAnonymously, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore, collection, doc, getDoc, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, query, where, Timestamp, writeBatch, getDocs, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
+import { Bar, Pie } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
+
+
 // --- Configuration ---
 // IMPORTANT: This is a sample configuration. Replace with your actual Firebase project details.
 const firebaseConfig = {
@@ -57,6 +63,12 @@ export default function App() {
         script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
         script.async = true;
         document.body.appendChild(script);
+        
+        const chartScript = document.createElement('script');
+        chartScript.src = "https://cdn.jsdelivr.net/npm/chart.js";
+        chartScript.async = true;
+        document.body.appendChild(chartScript);
+
 
         if (!app.current) {
             try {
@@ -120,6 +132,9 @@ export default function App() {
             unsubscribe();
             if(document.body.contains(script)){
                  document.body.removeChild(script);
+            }
+             if(document.body.contains(chartScript)){
+                 document.body.removeChild(chartScript);
             }
         };
     }, []);
@@ -441,7 +456,7 @@ const LoginModal = ({ auth, db, onClose }) => {
 
 // --- Admin Panel Components ---
 const AdminPanel = ({ userRole, auth, db, storage, isAuthReady }) => {
-    const [currentTab, setCurrentTab] = useState('checkIn');
+    const [currentTab, setCurrentTab] = useState('dashboard');
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
     const [bookingDate, setBookingDate] = useState(new Date());
 
@@ -474,6 +489,7 @@ const AdminPanel = ({ userRole, auth, db, storage, isAuthReady }) => {
 
 const Navbar = ({ userRole, currentTab, setCurrentTab, onLogout }) => {
     const navItems = [
+        { id: 'dashboard', label: 'Dashboard', icon: <Icon path="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 00-2.12-1.588H6.88a2.25 2.25 0 00-2.12 1.588L2.35 13.177a2.25 2.25 0 00-.1.661z" /> },
         { id: 'checkIn', label: 'Check-In', icon: <Icon path="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /> },
         { id: 'clients', label: 'Clients', icon: <Icon path="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-4.67c.12-.318.232-.656.328-1.003a4.125 4.125 0 00-7.533-2.493c-3.253 1.436-5.44 4.73-5.44 8.425v.036a12.318 12.318 0 008.624 4.482A12.318 12.318 0 0015 19.128zm-9.374 1.766a6.375 6.375 0 0111.964-4.67 4.125 4.125 0 00-7.533-2.493-4.125 4.125 0 00-4.43 2.493z" /> },
         { id: 'bookings', label: 'Bookings', icon: <Icon path="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0h18" /> },
@@ -481,7 +497,8 @@ const Navbar = ({ userRole, currentTab, setCurrentTab, onLogout }) => {
     
     if (userRole === 'admin') {
         navItems.push({ id: 'salonReport', label: 'Reports', icon: <Icon path="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /> });
-        navItems.push({ id: 'admin', label: 'Admin Settings', icon: <Icon path="M10.343 3.94c.09-.542.56-1.007 1.11-1.11h1.094c.55.103 1.02.567 1.11 1.11l.08.48a1.5 1.5 0 001.442 1.053l.498-.105c.58-.122 1.17.225 1.365.79l.578 1.002a1.5 1.5 0 00.44 1.05l.372.373c.464.463.695 1.11.588 1.715l-.12.602a1.5 1.5 0 00.88 1.53l.53.215c.603.244.966.834.966 1.48v1.094c0 .646-.363 1.236-.966 1.48l-.53.215a1.5 1.5 0 00-.88 1.53l.12.602c.107.605-.124 1.252-.588-1.715l-.372.373a1.5 1.5 0 00-.44 1.05l-.578 1.002c-.195.565-.785.912-1.365.79l-.498-.105a1.5 1.5 0 00-1.442 1.053l-.08.48c-.09.542-.56 1.007-1.11 1.11h-1.094c-.55-.103-1.02-.567-1.11-1.11l-.08-.48a1.5 1.5 0 00-1.442-1.053l-.498.105c-.58.122-1.17-.225-1.365-.79l-.578-1.002a1.5 1.5 0 00-.44-1.05l-.372-.373c-.464-.463-.695-1.11-.588-1.715l.12-.602a1.5 1.5 0 00-.88-1.53l-.53-.215c-.603-.244-.966-.834-.966-1.48v-1.094c0-.646.363-1.236.966-1.48l.53-.215a1.5 1.5 0 00.88-1.53l-.12-.602c-.107-.605.124-1.252.588-1.715l.372.373a1.5 1.5 0 00.44 1.05l.578 1.002c.195-.565.785.912-1.365.79l.498.105a1.5 1.5 0 001.442-1.053l.08-.48z" /> }
+        navItems.push({ id: 'inventory', label: 'Inventory', icon: <Icon path="M3.75 4.5A.75.75 0 014.5 3.75h15a.75.75 0 01.75.75v15a.75.75 0 01-.75.75h-15a.75.75 0 01-.75-.75v-15zM5.25 5.25v3h3V5.25h-3zM5.25 9.75v3h3v-3h-3zM5.25 15v3h3v-3h-3zM9.75 5.25v3h3V5.25h-3zM9.75 9.75v3h3v-3h-3zM9.75 15v3h3v-3h-3zm4.5-9.75v3h3V5.25h-3zm4.5 4.5v3h3v-3h-3zm0 4.5v3h3v-3h-3z" /> });
+        navItems.push({ id: 'admin', label: 'Admin Settings', icon: <Icon path="M10.343 3.94c.09-.542.56-1.007 1.11-1.11h1.094c.55.103 1.02.567 1.11 1.11l.08.48a1.5 1.5 0 001.442 1.053l.498-.105c.58-.122 1.17.225 1.365.79l.578 1.002a1.5 1.5 0 00.44 1.05l.372.373c.464.463.695 1.11.588 1.715l-.12.602a1.5 1.5 0 00.88 1.53l.53.215c.603.244.966.834.966 1.48v1.094c0 .646-.363 1.236-.966 1.48l-.53.215a1.5 1.5 0 00-.88 1.53l.12.602c.107.605-.124 1.252-.588-1.715l-.372.373a1.5 1.5 0 00-.44 1.05l-.578 1.002c-.195.565-.785.912-1.365-.79l-.498-.105a1.5 1.5 0 00-1.442 1.053l-.08.48c-.09.542-.56 1.007-1.11 1.11h-1.094c-.55-.103-1.02-.567-1.11-1.11l-.08-.48a1.5 1.5 0 00-1.442-1.053l-.498.105c-.58.122-1.17-.225-1.365-.79l-.578-1.002a1.5 1.5 0 00-.44-1.05l-.372-.373c-.464-.463-.695-1.11-.588-1.715l.12-.602a1.5 1.5 0 00-.88-1.53l-.53-.215c-.603-.244-.966.834-.966-1.48v-1.094c0-.646.363-1.236.966-1.48l.53-.215a1.5 1.5 0 00.88-1.53l-.12-.602c-.107-.605.124-1.252.588-1.715l.372.373a1.5 1.5 0 00.44 1.05l.578 1.002c.195-.565.785.912-1.365.79l.498.105a1.5 1.5 0 001.442-1.053l.08-.48z" /> }
         );
     }
 
@@ -492,15 +509,144 @@ const Navbar = ({ userRole, currentTab, setCurrentTab, onLogout }) => {
 
 const TabContent = ({ currentTab, db, storage, isAuthReady, auth, userRole, onCalendarDayClick }) => {
     switch (currentTab) {
+        case 'dashboard': return <AdvancedDashboardTab db={db} isAuthReady={isAuthReady} />;
         case 'admin': return <AdminTab db={db} storage={storage} isAuthReady={isAuthReady} auth={auth} />;
         case 'bookings': return <ClientsBookingTab db={db} isAuthReady={isAuthReady} onCalendarDayClick={onCalendarDayClick} />;
-        case 'reports': return <ReportsTab db={db} isAuthReady={isAuthReady} />;
         case 'checkIn': return <CheckInTab db={db} isAuthReady={isAuthReady} />;
         case 'clients': return <ClientsTab db={db} isAuthReady={isAuthReady} />;
         case 'salonReport': return <SalonEarningReportTab db={db} storage={storage} isAuthReady={isAuthReady} userRole={userRole} />;
-        default: return <CheckInTab db={db} isAuthReady={isAuthReady} />;
+        case 'inventory': return <InventoryManagementTab db={db} storage={storage} isAuthReady={isAuthReady} />;
+        default: return <AdvancedDashboardTab db={db} isAuthReady={isAuthReady} />;
     }
 };
+
+const AdvancedDashboardTab = ({ db, isAuthReady }) => {
+    const [stats, setStats] = useState({ appointments: 0, services: 0, clients: 0, totalRevenue: 0 });
+    const [servicePopularity, setServicePopularity] = useState({});
+    const [technicianPerformance, setTechnicianPerformance] = useState({});
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!isAuthReady) return;
+        
+        const fetchData = async () => {
+            setIsLoading(true);
+            
+            // Appointments and Revenue
+            const apptQuery = query(collection(db, `artifacts/${getSafeAppId()}/public/data/appointments`));
+            const unsubAppt = onSnapshot(apptQuery, async (snapshot) => {
+                const appointments = snapshot.docs.map(doc => doc.data());
+                
+                // Fetch all services to get their prices
+                const servicesSnapshot = await getDocs(collection(db, `artifacts/${getSafeAppId()}/public/data/services`));
+                const servicePrices = {};
+                servicesSnapshot.forEach(doc => {
+                    servicePrices[doc.data().name] = doc.data().price;
+                });
+
+                let totalRevenue = 0;
+                const serviceCount = {};
+                const techCount = {};
+
+                appointments.forEach(appt => {
+                    if (Array.isArray(appt.services)) {
+                        appt.services.forEach(serviceName => {
+                            totalRevenue += servicePrices[serviceName] || 0;
+                            serviceCount[serviceName] = (serviceCount[serviceName] || 0) + 1;
+                        });
+                    }
+                    if(appt.technician && appt.technician !== 'Any') {
+                        techCount[appt.technician] = (techCount[appt.technician] || 0) + 1;
+                    }
+                });
+
+                setStats(prev => ({ ...prev, appointments: snapshot.size, totalRevenue }));
+                setServicePopularity(serviceCount);
+                setTechnicianPerformance(techCount);
+
+            }, console.error);
+
+            // Services
+            const servicesQuery = query(collection(db, `artifacts/${getSafeAppId()}/public/data/services`));
+            const unsubServices = onSnapshot(servicesQuery, (snapshot) => {
+                setStats(prev => ({ ...prev, services: snapshot.size }));
+            }, console.error);
+
+            // Clients
+            const clientsQuery = query(collection(db, `artifacts/${getSafeAppId()}/public/data/clients`));
+            const unsubClients = onSnapshot(clientsQuery, (snapshot) => {
+                setStats(prev => ({ ...prev, clients: snapshot.size }));
+            }, console.error);
+
+            setIsLoading(false);
+            
+            return () => {
+                unsubAppt();
+                unsubServices();
+                unsubClients();
+            };
+        };
+
+        fetchData();
+
+    }, [db, isAuthReady]);
+    
+    const servicePopularityData = {
+        labels: Object.keys(servicePopularity),
+        datasets: [{
+            label: 'Number of Bookings',
+            data: Object.values(servicePopularity),
+            backgroundColor: 'rgba(236, 72, 153, 0.6)',
+            borderColor: 'rgba(236, 72, 153, 1)',
+            borderWidth: 1,
+        }],
+    };
+    
+    const technicianPerformanceData = {
+        labels: Object.keys(technicianPerformance),
+        datasets: [{
+            data: Object.values(technicianPerformance),
+            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
+        }]
+    };
+
+    const StatCard = ({ title, value, icon, format = val => val }) => (
+        <div className="bg-white p-6 rounded-lg shadow-lg flex items-center space-x-4">
+            <div className="bg-pink-100 p-3 rounded-full">{icon}</div>
+            <div>
+                <p className="text-sm text-gray-500">{title}</p>
+                <p className="text-3xl font-bold text-gray-800">{isLoading ? '...' : format(value)}</p>
+            </div>
+        </div>
+    );
+
+    if (isLoading) return <LoadingScreen text="Loading Dashboard..." />;
+
+    return (
+        <div className="space-y-6">
+            <h1 className="text-3xl font-bold text-gray-800">Advanced Dashboard</h1>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard title="Total Revenue" value={stats.totalRevenue} format={v => `$${v.toFixed(2)}`} icon={<Icon path="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" className="text-pink-600" />} />
+                <StatCard title="Total Appointments" value={stats.appointments} icon={<Icon path="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0h18" className="text-pink-600" />} />
+                <StatCard title="Services Offered" value={stats.services} icon={<Icon path="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" className="text-pink-600" />} />
+                <StatCard title="Total Clients" value={stats.clients} icon={<Icon path="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" className="text-pink-600" />} />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white p-6 rounded-lg shadow-lg">
+                    <h2 className="text-xl font-bold text-gray-800 mb-4">Service Popularity</h2>
+                    <Bar data={servicePopularityData} options={{ responsive: true, plugins: { legend: { position: 'top' } } }}/>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow-lg">
+                    <h2 className="text-xl font-bold text-gray-800 mb-4">Technician Performance</h2>
+                    <div className="max-w-xs mx-auto">
+                       <Pie data={technicianPerformanceData} options={{ responsive: true, plugins: { legend: { position: 'top' } } }}/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 const AdminTab = ({ db, storage, isAuthReady, auth }) => {
     const [adminSubTab, setAdminSubTab] = useState('staff');
@@ -710,25 +856,6 @@ const StaffEditModal = ({ staff, onSave, onClose }) => {
             </div>
         </div>
     );
-};
-
-
-const ReportsTab = ({ db, isAuthReady }) => {
-    const [stats, setStats] = useState({ appointments: 0, services: 0, clients: 0 });
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        if (!isAuthReady) return;
-        const unsubAppointments = onSnapshot(collection(db, `artifacts/${getSafeAppId()}/public/data/appointments`), (snap) => setStats(prev => ({ ...prev, appointments: snap.size })));
-        const unsubServices = onSnapshot(collection(db, `artifacts/${getSafeAppId()}/public/data/services`), (snap) => setStats(prev => ({ ...prev, services: snap.size })));
-        const unsubClients = onSnapshot(collection(db, `artifacts/${getSafeAppId()}/public/data/clients`), (snap) => setStats(prev => ({ ...prev, clients: snap.size })));
-        setIsLoading(false);
-        return () => { unsubAppointments(); unsubServices(); unsubClients(); };
-    }, [db, isAuthReady]);
-
-    const StatCard = ({ title, value, icon }) => (<div className="bg-white p-6 rounded-lg shadow-lg flex items-center space-x-4"><div className="bg-pink-100 p-3 rounded-full">{icon}</div><div><p className="text-sm text-gray-500">{title}</p><p className="text-3xl font-bold text-gray-800">{isLoading ? '...' : value}</p></div></div>);
-
-    return (<div className="space-y-6"><h1 className="text-3xl font-bold text-gray-800">Dashboard</h1><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"><StatCard title="Total Appointments" value={stats.appointments} icon={<Icon path="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0h18" className="text-pink-600" />} /><StatCard title="Services Offered" value={stats.services} icon={<Icon path="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" className="text-pink-600" />} /><StatCard title="Total Clients Checked In" value={stats.clients} icon={<Icon path="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" className="text-pink-600" />} /></div></div>);
 };
 
 const ClientsBookingTab = ({ db, isAuthReady, onCalendarDayClick }) => {
@@ -1220,7 +1347,7 @@ const CheckInFormSection = ({ db }) => {
                     <span className="text-sm font-medium text-gray-600">{client.services.length} selected</span>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                    {categories.map(cat => (<button type="button" key={cat} onClick={() => { setCurrentCategory(cat); setIsServiceModalOpen(true); }} className="p-4 border border-gray-300 rounded-lg text-center hover:bg-pink-50 hover:shadow-md transition"><p className="font-semibold text-pink-600">{cat}</p><p className="text-xs text-gray-500">Click to select</p></button>))}
+                    {categories.map(cat => (<button type="button" key={cat} onClick={() => { setCurrentCategory(cat); setIsServiceModalOpen(true); }} className="p-4 border border-gray-300 rounded-lg text-center hover:bg-pink-50 hover:shadow-md transition"><p className="font-semibold text-pink-500">{cat}</p><p className="text-xs text-gray-500">Click to select</p></button>))}
                 </div>
                 
                 <div className="mt-6 mb-4 flex items-center justify-center">
@@ -2447,6 +2574,121 @@ const SupplierEditModal = ({ supplier, onSave, onClose }) => {
     );
 };
 
+const InventoryManagementTab = ({ db, storage, isAuthReady }) => {
+    const [products, setProducts] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [currentProduct, setCurrentProduct] = useState({ name: '', category: '', stock: 0, price: 0, supplier: '' });
+    const [isEditing, setIsEditing] = useState(false);
+    const [suppliers, setSuppliers] = useState([]);
+    
+    useEffect(() => {
+        if (!isAuthReady) return;
+        
+        const unsubProducts = onSnapshot(collection(db, `artifacts/${getSafeAppId()}/public/data/products`), (snapshot) => {
+            setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            setIsLoading(false);
+        }, console.error);
 
+        const unsubSuppliers = onSnapshot(doc(db, `artifacts/${getSafeAppId()}/public/data/settings`, 'suppliers'), (doc) => {
+            if (doc.exists()) setSuppliers(doc.data().list || []);
+        });
 
+        return () => {
+            unsubProducts();
+            unsubSuppliers();
+        };
+    }, [db, isAuthReady]);
 
+    const handleOpenModal = (product = null) => {
+        setCurrentProduct(product ? { ...product } : { name: '', category: '', stock: 0, price: 0, supplier: '' });
+        setIsEditing(!!product);
+        setIsModalOpen(true);
+    };
+
+    const handleSaveProduct = async () => {
+        const productData = {
+            ...currentProduct,
+            stock: Number(currentProduct.stock),
+            price: Number(currentProduct.price),
+        };
+
+        if (isEditing) {
+            const productDoc = doc(db, `artifacts/${getSafeAppId()}/public/data/products`, currentProduct.id);
+            await updateDoc(productDoc, productData);
+        } else {
+            await addDoc(collection(db, `artifacts/${getSafeAppId()}/public/data/products`), productData);
+        }
+        setIsModalOpen(false);
+    };
+
+    const handleDeleteProduct = async (productId) => {
+        if (window.confirm("Are you sure you want to delete this product?")) {
+            await deleteDoc(doc(db, `artifacts/${getSafeAppId()}/public/data/products`, productId));
+        }
+    };
+
+    return (
+        <div className="p-6 bg-white rounded-lg shadow">
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-700">Inventory Management</h2>
+                <button onClick={() => handleOpenModal()} className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 flex items-center">
+                    <Icon path="M12 4.5v15m7.5-7.5h-15" className="w-5 h-5 mr-2" />
+                    Add Product
+                </button>
+            </div>
+            {isLoading ? <LoadingScreen text="Loading Inventory..." /> : (
+                <div className="overflow-x-auto">
+                    <table className="min-w-full bg-white">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Product Name</th>
+                                <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                                <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
+                                <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                                <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Supplier</th>
+                                <th className="py-3 px-6 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                            {products.map(product => (
+                                <tr key={product.id} className={product.stock < 10 ? 'bg-red-100' : ''}>
+                                    <td className="py-4 px-6">{product.name}</td>
+                                    <td className="py-4 px-6">{product.category}</td>
+                                    <td className="py-4 px-6">{product.stock}</td>
+                                    <td className="py-4 px-6">${product.price.toFixed(2)}</td>
+                                    <td className="py-4 px-6">{product.supplier}</td>
+                                    <td className="py-4 px-6 text-right space-x-2">
+                                        <button onClick={() => handleOpenModal(product)} className="text-indigo-600 hover:text-indigo-900"><Icon path="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" className="w-5 h-5" /></button>
+                                        <button onClick={() => handleDeleteProduct(product.id)} className="text-red-600 hover:text-red-900"><Icon path="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 00-2.09 2.134v.916m7.5 0a48.667 48.667 0 00-7.5 0" className="w-5 h-5" /></button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto p-4">
+                    <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md mx-auto my-8">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">{isEditing ? 'Edit Product' : 'Add New Product'}</h3>
+                        <div className="space-y-4">
+                            <input type="text" placeholder="Product Name" value={currentProduct.name} onChange={e => setCurrentProduct({...currentProduct, name: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                            <input type="text" placeholder="Category" value={currentProduct.category} onChange={e => setCurrentProduct({...currentProduct, category: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                            <input type="number" placeholder="Stock" value={currentProduct.stock} onChange={e => setCurrentProduct({...currentProduct, stock: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                            <input type="number" placeholder="Price" value={currentProduct.price} onChange={e => setCurrentProduct({...currentProduct, price: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                            <select value={currentProduct.supplier} onChange={e => setCurrentProduct({...currentProduct, supplier: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
+                                <option value="">Select Supplier</option>
+                                {suppliers.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                            </select>
+                        </div>
+                        <div className="mt-6 flex justify-end space-x-3">
+                            <button onClick={() => setIsModalOpen(false)} className="w-auto px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</button>
+                            <button onClick={handleSaveProduct} className="w-auto px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600">{isEditing ? 'Update' : 'Save'}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
