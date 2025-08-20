@@ -498,7 +498,7 @@ const Navbar = ({ userRole, currentTab, setCurrentTab, onLogout }) => {
     if (userRole === 'admin') {
         navItems.push({ id: 'salonReport', label: 'Reports', icon: <Icon path="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /> });
         navItems.push({ id: 'inventory', label: 'Inventory', icon: <Icon path="M3.75 4.5A.75.75 0 014.5 3.75h15a.75.75 0 01.75.75v15a.75.75 0 01-.75.75h-15a.75.75 0 01-.75-.75v-15zM5.25 5.25v3h3V5.25h-3zM5.25 9.75v3h3v-3h-3zM5.25 15v3h3v-3h-3zM9.75 5.25v3h3V5.25h-3zM9.75 9.75v3h3v-3h-3zM9.75 15v3h3v-3h-3zm4.5-9.75v3h3V5.25h-3zm4.5 4.5v3h3v-3h-3zm0 4.5v3h3v-3h-3z" /> });
-        navItems.push({ id: 'admin', label: 'Admin Settings', icon: <Icon path="M10.343 3.94c.09-.542.56-1.007 1.11-1.11h1.094c.55.103 1.02.567 1.11 1.11l.08.48a1.5 1.5 0 001.442 1.053l.498-.105c.58-.122 1.17.225 1.365.79l.578 1.002a1.5 1.5 0 00.44 1.05l.372.373c.464.463.695 1.11.588 1.715l-.12.602a1.5 1.5 0 00.88 1.53l.53.215c.603.244.966.834.966 1.48v1.094c0 .646-.363 1.236-.966 1.48l-.53.215a1.5 1.5 0 00-.88 1.53l.12.602c.107.605-.124 1.252-.588-1.715l-.372.373a1.5 1.5 0 00-.44 1.05l-.578 1.002c-.195.565-.785.912-1.365-.79l-.498-.105a1.5 1.5 0 00-1.442 1.053l-.08.48c-.09.542-.56 1.007-1.11 1.11h-1.094c-.55-.103-1.02-.567-1.11-1.11l-.08-.48a1.5 1.5 0 00-1.442-1.053l-.498.105c-.58.122-1.17-.225-1.365-.79l-.578-1.002a1.5 1.5 0 00-.44-1.05l-.372-.373c-.464-.463-.695-1.11-.588-1.715l.12-.602a1.5 1.5 0 00-.88-1.53l-.53-.215c-.603-.244-.966.834-.966-1.48v-1.094c0-.646.363-1.236.966-1.48l.53-.215a1.5 1.5 0 00.88-1.53l-.12-.602c-.107-.605.124-1.252.588-1.715l.372.373a1.5 1.5 0 00.44 1.05l.578 1.002c.195-.565.785.912-1.365.79l.498.105a1.5 1.5 0 001.442-1.053l.08-.48z" /> }
+        navItems.push({ id: 'admin', label: 'Admin Settings', icon: <Icon path="M10.343 3.94c.09-.542.56-1.007 1.11-1.11h1.094c.55.103 1.02.567 1.11 1.11l.08.48a1.5 1.5 0 001.442 1.053l.498-.105c.58-.122 1.17.225 1.365.79l.578 1.002a1.5 1.5 0 00.44 1.05l.372.373c.464.463.695 1.11.588 1.715l-.12.602a1.5 1.5 0 00.88 1.53l.53.215c.603.244.966.834.966 1.48v1.094c0 .646-.363 1.236-.966 1.48l-.53.215a1.5 1.5 0 00-.88 1.53l.12.602c.107.605-.124 1.252-.588-1.715l-.372.373a1.5 1.5 0 00-.44 1.05l-.578 1.002c-.195.565-.785.912-1.365-.79l-.498-.105a1.5 1.5 0 00-1.442 1.053l-.08.48c-.09.542-.56 1.007-1.11 1.11h-1.094c-.55-.103-1.02-.567-1.11-1.11l-.08-.48a1.5 1.5 0 00-1.442-1.053l-.498.105c-.58.122-1.17-.225-1.365-.79l-.578-1.002a1.5 1.5 0 00-.44-1.05l-.372-.373c-.464-.463-.695-1.11-.588-1.715l.12-.602a1.5 1.5 0 00-.88-1.53l-.53-.215c-.603-.244-.966.834-.966-1.48v-1.094c0-.646.363 1.236-.966-1.48l.53-.215a1.5 1.5 0 00.88-1.53l-.12-.602c-.107-.605.124-1.252.588-1.715l.372.373a1.5 1.5 0 00.44 1.05l.578 1.002c.195-.565.785.912-1.365.79l.498.105a1.5 1.5 0 001.442-1.053l.08-.48z" /> }
         );
     }
 
@@ -1172,6 +1172,9 @@ const CheckInTab = ({ db, isAuthReady }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [checkInView, setCheckInView] = useState('form'); // 'form', 'queue', 'processing', 'finished'
     const [editingClient, setEditingClient] = useState(null);
+    const [feedbackClient, setFeedbackClient] = useState(null); // New state for feedback modal
+    const [technicians, setTechnicians] = useState([]);
+
 
     useEffect(() => {
         if (!isAuthReady) return;
@@ -1182,12 +1185,40 @@ const CheckInTab = ({ db, isAuthReady }) => {
             setClients(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             setIsLoading(false);
         }, console.error);
-        return () => unsubscribe();
+        
+        const usersQuery = query(collection(db, 'users'), where("role", "==", "technician"));
+        const unsubUsers = onSnapshot(usersQuery, (snapshot) => {
+            setTechnicians(snapshot.docs.map(doc => doc.data().name || doc.data().email));
+        });
+
+        return () => {
+             unsubscribe();
+             unsubUsers();
+        }
     }, [db, isAuthReady]);
     
     const updateClientStatus = async (id, status) => {
         const clientDoc = doc(db, `artifacts/${getSafeAppId()}/public/data/clients`, id);
         await updateDoc(clientDoc, { status });
+    };
+    
+    const handleOpenFeedbackModal = (client) => {
+        setFeedbackClient(client);
+    };
+
+    const handleFeedbackSubmit = async (feedbackData) => {
+        if (!feedbackClient) return;
+        const clientDocRef = doc(db, `artifacts/${getSafeAppId()}/public/data/clients`, feedbackClient.id);
+        const feedbackCollectionRef = collection(clientDocRef, 'feedback');
+        
+        try {
+            await addDoc(feedbackCollectionRef, { ...feedbackData, submittedAt: Timestamp.now() });
+            await updateDoc(clientDocRef, { status: 'finished' });
+            setFeedbackClient(null); // Close modal
+        } catch (error) {
+            console.error("Error submitting feedback:", error);
+            alert("Failed to submit feedback.");
+        }
     };
 
     const handleUpdateClient = async (clientData) => {
@@ -1217,12 +1248,13 @@ const CheckInTab = ({ db, isAuthReady }) => {
                 </div>
                 <div className="pt-6">
                     {checkInView === 'form' && <CheckInFormSection db={db} />}
-                    {checkInView === 'queue' && <ClientList title="Active Queue" clients={activeQueueClients} updateStatus={updateClientStatus} deleteClient={deleteClient} onEdit={setEditingClient} />}
-                    {checkInView === 'processing' && <ClientList title="Clients In Processing" clients={processingClients} updateStatus={updateClientStatus} deleteClient={deleteClient} onEdit={setEditingClient} />}
-                    {checkInView === 'finished' && <ClientList title="Finished Clients" clients={finishedClients} updateStatus={updateClientStatus} deleteClient={deleteClient} onEdit={setEditingClient} />}
+                    {checkInView === 'queue' && <ClientList title="Active Queue" clients={activeQueueClients} updateStatus={updateClientStatus} deleteClient={deleteClient} onEdit={setEditingClient} onOpenFeedback={handleOpenFeedbackModal} />}
+                    {checkInView === 'processing' && <ClientList title="Clients In Processing" clients={processingClients} updateStatus={updateClientStatus} deleteClient={deleteClient} onEdit={setEditingClient} onOpenFeedback={handleOpenFeedbackModal} />}
+                    {checkInView === 'finished' && <ClientList title="Finished Clients" clients={finishedClients} updateStatus={updateClientStatus} deleteClient={deleteClient} onEdit={setEditingClient} onOpenFeedback={handleOpenFeedbackModal} />}
                 </div>
             </div>
             {editingClient && <ClientEditModal client={editingClient} db={db} onSave={handleUpdateClient} onClose={() => setEditingClient(null)} />}
+            {feedbackClient && <ClientFeedbackModal client={feedbackClient} technicians={technicians} onClose={() => setFeedbackClient(null)} onSubmit={handleFeedbackSubmit} />}
         </div>
     );
 };
@@ -1368,7 +1400,7 @@ const CheckInFormSection = ({ db }) => {
     );
 };
 
-const ClientList = ({ title, clients, updateStatus, deleteClient, onEdit }) => (
+const ClientList = ({ title, clients, updateStatus, deleteClient, onEdit, onOpenFeedback }) => (
     <div className="mt-8">
         <h3 className="text-xl font-semibold text-gray-700 mb-4">{title}</h3>
         {clients.length > 0 ? (
@@ -1393,10 +1425,10 @@ const ClientList = ({ title, clients, updateStatus, deleteClient, onEdit }) => (
                                 <td className="py-4 px-6">{c.groupSize}</td>
                                 <td className="py-4 px-6">{c.technician}</td>
                                 <td className="py-4 px-6 text-right space-x-2">
-                                    {c.status === 'checked-in' && <button onClick={() => updateStatus(c.id, 'processing')} className="text-blue-500 hover:text-blue-700"><Icon path="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" className="w-5 h-5" /></button>}
-                                    {c.status === 'processing' && <button onClick={() => updateStatus(c.id, 'finished')} className="text-green-500 hover:text-green-700"><Icon path="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" className="w-5 h-5" /></button>}
-                                    <button onClick={() => onEdit(c)} className="text-indigo-500 hover:text-indigo-700"><Icon path="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" className="w-5 h-5" /></button>
-                                    <button onClick={() => deleteClient(c.id)} className="text-red-500 hover:text-red-700"><Icon path="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 00-2.09 2.134v.916m7.5 0a48.667 48.667 0 00-7.5 0" className="w-5 h-5" /></button>
+                                    {c.status === 'checked-in' && <button onClick={() => updateStatus(c.id, 'processing')} className="text-blue-500 hover:text-blue-700" title="Move to Processing"><Icon path="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" className="w-5 h-5" /></button>}
+                                    {c.status === 'processing' && <button onClick={() => onOpenFeedback(c)} className="text-green-500 hover:text-green-700" title="Finish & Get Feedback"><Icon path="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" className="w-5 h-5" /></button>}
+                                    <button onClick={() => onEdit(c)} className="text-indigo-500 hover:text-indigo-700" title="Edit"><Icon path="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" className="w-5 h-5" /></button>
+                                    <button onClick={() => deleteClient(c.id)} className="text-red-500 hover:text-red-700" title="Delete"><Icon path="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 00-2.09 2.134v.916m7.5 0a48.667 48.667 0 00-7.5 0" className="w-5 h-5" /></button>
                                 </td>
                             </tr>
                         ))}
@@ -1428,19 +1460,95 @@ const ClientEditModal = ({ client, db, onSave, onClose }) => {
             <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg mx-auto my-8">
                 <h3 className="text-2xl font-bold text-gray-800 mb-6">Edit Check-In</h3>
                 <div className="space-y-4">
-                    <input type="text" placeholder="Client Name" value={editedClient.name} onChange={e => setEditedClient({...editedClient, name: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md" required />
-                    <input type="tel" placeholder="Phone" value={editedClient.phone} onChange={e => setEditedClient({...editedClient, phone: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md" required />
-                    <select multiple value={editedClient.services} onChange={e => setEditedClient({...editedClient, services: [...e.target.selectedOptions].map(o => o.value)})} className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white h-24">
-                        {allServices.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-                    </select>
-                    <select value={editedClient.technician} onChange={e => setEditedClient({...editedClient, technician: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
-                        {technicians.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
+                    <div>
+                        <label htmlFor="edit-client-name" className="block text-sm font-medium text-gray-700 mb-1">Client Name</label>
+                        <input id="edit-client-name" type="text" placeholder="Client Name" value={editedClient.name} onChange={e => setEditedClient({...editedClient, name: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md" required />
+                    </div>
+                    <div>
+                        <label htmlFor="edit-client-phone" className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                        <input id="edit-client-phone" type="tel" placeholder="Phone" value={editedClient.phone} onChange={e => setEditedClient({...editedClient, phone: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md" required />
+                    </div>
+                    <div>
+                        <label htmlFor="edit-client-services" className="block text-sm font-medium text-gray-700 mb-1">Services</label>
+                        <select id="edit-client-services" multiple value={editedClient.services} onChange={e => setEditedClient({...editedClient, services: [...e.target.selectedOptions].map(o => o.value)})} className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white h-24">
+                            {allServices.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="edit-client-technician" className="block text-sm font-medium text-gray-700 mb-1">Technician</label>
+                        <select id="edit-client-technician" value={editedClient.technician} onChange={e => setEditedClient({...editedClient, technician: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
+                            {technicians.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                    </div>
                 </div>
                 <div className="flex justify-end space-x-3 pt-4">
                     <button type="button" onClick={onClose} className="w-auto px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</button>
                     <button type="button" onClick={handleSave} className="w-auto px-6 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700">Save Changes</button>
                 </div>
+            </div>
+        </div>
+    );
+};
+
+
+const ClientFeedbackModal = ({ client, technicians, onClose, onSubmit }) => {
+    const [feedback, setFeedback] = useState({
+        colorCode: '',
+        technician: client.technician !== 'Any' ? client.technician : (technicians.length > 0 ? technicians[0] : ''),
+        nextAppointment: 'No, Thank You',
+        nextAppointmentDate: ''
+    });
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFeedback(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onSubmit(feedback);
+    };
+    
+    const showDatePicker = feedback.nextAppointment === 'pick_date';
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto p-4 flex items-center justify-center">
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-2xl font-bold text-gray-800">Client Feedback for {client.name}</h3>
+                    <button onClick={onClose}><Icon path="M6 18L18 6M6 6l12 12" /></button>
+                </div>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">What color code did you choose today?</label>
+                        <input type="text" name="colorCode" value={feedback.colorCode} onChange={handleInputChange} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Who provided your service today?</label>
+                        <select name="technician" value={feedback.technician} onChange={handleInputChange} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
+                            {technicians.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Next Appointment?</label>
+                        <select name="nextAppointment" value={feedback.nextAppointment} onChange={handleInputChange} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
+                            <option value="No, Thank You">No, Thank You</option>
+                            <option value="2 weeks">2 weeks</option>
+                            <option value="3 weeks">3 weeks</option>
+                            <option value="pick_date">Pick a specific date</option>
+                        </select>
+                    </div>
+                    {showDatePicker && (
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700">Select Date for Next Appointment</label>
+                            <input type="date" name="nextAppointmentDate" value={feedback.nextAppointmentDate} onChange={handleInputChange} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md" />
+                        </div>
+                    )}
+                    <div className="flex justify-end space-x-3 pt-4">
+                        <button type="button" onClick={onClose} className="w-auto px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</button>
+                        <button type="submit" className="w-auto px-6 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700">Submit Feedback & Finish</button>
+                    </div>
+                </form>
             </div>
         </div>
     );
