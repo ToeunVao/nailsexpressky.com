@@ -459,6 +459,52 @@ const AdminPanel = ({ userRole, auth, db, storage, isAuthReady }) => {
     const [currentTab, setCurrentTab] = useState('dashboard');
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
     const [bookingDate, setBookingDate] = useState(new Date());
+    const [notifications, setNotifications] = useState([]);
+
+    useEffect(() => {
+        if (!isAuthReady) return;
+
+        // Listener for new bookings
+        const appointmentsQuery = query(collection(db, `artifacts/${getSafeAppId()}/public/data/appointments`), where("status", "==", "booked"));
+        const unsubAppointments = onSnapshot(appointmentsQuery, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added") {
+                    const booking = change.doc.data();
+                    const newNotif = {
+                        id: `booking-${change.doc.id}`,
+                        type: 'booking',
+                        message: `New booking from ${booking.clientName} for ${booking.date.toDate().toLocaleDateString()}.`,
+                        timestamp: new Date(),
+                        isRead: false
+                    };
+                    setNotifications(prev => [newNotif, ...prev.filter(n => n.id !== newNotif.id)]);
+                }
+            });
+        });
+
+        // Listener for low stock
+        const productsQuery = query(collection(db, `artifacts/${getSafeAppId()}/public/data/products`), where("stock", "<", 10));
+        const unsubProducts = onSnapshot(productsQuery, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added" || change.type === "modified") {
+                    const product = change.doc.data();
+                    const newNotif = {
+                        id: `stock-${change.doc.id}`,
+                        type: 'stock',
+                        message: `${product.name} is low on stock (${product.stock} remaining).`,
+                        timestamp: new Date(),
+                        isRead: false,
+                    };
+                    setNotifications(prev => [newNotif, ...prev.filter(n => n.id !== newNotif.id)]);
+                }
+            });
+        });
+
+        return () => {
+            unsubAppointments();
+            unsubProducts();
+        };
+    }, [db, isAuthReady]);
 
     const handleOpenBookingModal = (date) => {
         setBookingDate(date || new Date());
@@ -473,9 +519,25 @@ const AdminPanel = ({ userRole, auth, db, storage, isAuthReady }) => {
         }
     };
 
+    const markAsRead = (id) => {
+        setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true } : n));
+    };
+
+    const clearAllNotifications = () => {
+        setNotifications([]);
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 font-sans">
-            <Navbar userRole={userRole} currentTab={currentTab} setCurrentTab={setCurrentTab} onLogout={handleLogout} />
+            <Navbar 
+                userRole={userRole} 
+                currentTab={currentTab} 
+                setCurrentTab={setCurrentTab} 
+                onLogout={handleLogout}
+                notifications={notifications}
+                markAsRead={markAsRead}
+                clearAllNotifications={clearAllNotifications}
+            />
             <main className="p-4 sm:p-6 lg:p-8">
                 <TabContent currentTab={currentTab} db={db} storage={storage} isAuthReady={isAuthReady} auth={auth} userRole={userRole} onCalendarDayClick={handleOpenBookingModal} />
             </main>
@@ -487,7 +549,10 @@ const AdminPanel = ({ userRole, auth, db, storage, isAuthReady }) => {
     );
 };
 
-const Navbar = ({ userRole, currentTab, setCurrentTab, onLogout }) => {
+const Navbar = ({ userRole, currentTab, setCurrentTab, onLogout, notifications, markAsRead, clearAllNotifications }) => {
+    const [showNotifications, setShowNotifications] = useState(false);
+    const unreadCount = notifications.filter(n => !n.isRead).length;
+
     const navItems = [
         { id: 'dashboard', label: 'Dashboard', icon: <Icon path="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 00-2.12-1.588H6.88a2.25 2.25 0 00-2.12 1.588L2.35 13.177a2.25 2.25 0 00-.1.661z" /> },
         { id: 'checkIn', label: 'Check-In', icon: <Icon path="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /> },
@@ -503,7 +568,56 @@ const Navbar = ({ userRole, currentTab, setCurrentTab, onLogout }) => {
     }
 
     return (
-        <header className="bg-white shadow-md"><div className="container mx-auto px-4 sm:px-6 lg:px-8"><div className="flex items-center justify-between h-16"><div className="flex items-center"><span className="font-bold text-xl text-pink-600">NailXpress Admin</span></div><nav className="hidden md:flex items-center space-x-1">{navItems.map(item => (<button key={item.id} onClick={() => setCurrentTab(item.id)} className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${currentTab === item.id ? 'bg-pink-100 text-pink-700' : 'text-gray-500 hover:bg-gray-100'}`}>{item.icon}<span className="ml-2">{item.label}</span></button>))}</nav><div className="flex items-center"><button onClick={onLogout} className="ml-4 p-2 rounded-full text-gray-500 hover:bg-gray-100"><Icon path="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" className="w-5 h-5" /></button></div></div></div></header>
+        <header className="bg-white shadow-md">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex items-center justify-between h-16">
+                    <div className="flex items-center">
+                        <span className="font-bold text-xl text-pink-600">NailXpress Admin</span>
+                        <div className="relative ml-4">
+                            <button onClick={() => setShowNotifications(!showNotifications)} className="p-2 rounded-full text-gray-500 hover:bg-gray-100 relative">
+                                <Icon path="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" className="w-6 h-6" />
+                                {unreadCount > 0 && (
+                                    <span className="absolute top-0 right-0 block h-4 w-4 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">{unreadCount}</span>
+                                )}
+                            </button>
+                            {showNotifications && (
+                                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-20">
+                                    <div className="p-4 flex justify-between items-center border-b">
+                                        <h3 className="font-semibold">Notifications</h3>
+                                        <button onClick={clearAllNotifications} className="text-sm text-blue-500 hover:underline">Clear All</button>
+                                    </div>
+                                    <div className="max-h-96 overflow-y-auto">
+                                        {notifications.length === 0 ? (
+                                            <p className="p-4 text-gray-500">No new notifications.</p>
+                                        ) : (
+                                            notifications.map(n => (
+                                                <div key={n.id} onClick={() => markAsRead(n.id)} className={`p-4 border-b hover:bg-gray-50 cursor-pointer ${!n.isRead ? 'bg-blue-50' : ''}`}>
+                                                    <p className="text-sm">{n.message}</p>
+                                                    <p className="text-xs text-gray-400 mt-1">{n.timestamp.toLocaleString()}</p>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <nav className="hidden md:flex items-center space-x-1">
+                        {navItems.map(item => (
+                            <button key={item.id} onClick={() => setCurrentTab(item.id)} className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${currentTab === item.id ? 'bg-pink-100 text-pink-700' : 'text-gray-500 hover:bg-gray-100'}`}>
+                                {item.icon}
+                                <span className="ml-2">{item.label}</span>
+                            </button>
+                        ))}
+                    </nav>
+                    <div className="flex items-center">
+                        <button onClick={onLogout} className="ml-4 p-2 rounded-full text-gray-500 hover:bg-gray-100">
+                            <Icon path="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" className="w-5 h-5" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
     );
 };
 
