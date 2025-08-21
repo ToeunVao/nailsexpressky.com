@@ -1326,12 +1326,51 @@ const CheckInTab = ({ db, isAuthReady }) => {
         const feedbackCollectionRef = collection(clientDocRef, 'feedback');
         
         try {
+            // 1. Add feedback document
             await addDoc(feedbackCollectionRef, { ...feedbackData, submittedAt: Timestamp.now() });
+
+            // 2. Update client status to 'finished'
             await updateDoc(clientDocRef, { status: 'finished' });
+
+            // 3. Handle rebooking if requested
+            let nextAppointmentDate = null;
+            const today = new Date();
+            // Reset time to avoid issues with date changes
+            today.setHours(10, 0, 0, 0); 
+
+            if (feedbackData.nextAppointment === '2 weeks') {
+                nextAppointmentDate = new Date(today.setDate(today.getDate() + 14));
+            } else if (feedbackData.nextAppointment === '3 weeks') {
+                nextAppointmentDate = new Date(today.setDate(today.getDate() + 21));
+            } else if (feedbackData.nextAppointment === 'pick_date' && feedbackData.nextAppointmentDate) {
+                // Input type="date" gives "YYYY-MM-DD". We need to parse it carefully to avoid timezone issues.
+                const dateParts = feedbackData.nextAppointmentDate.split('-');
+                // new Date(year, monthIndex, day)
+                nextAppointmentDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                nextAppointmentDate.setHours(10, 0, 0, 0); // Set a default time, e.g., 10:00 AM
+            }
+
+            if (nextAppointmentDate) {
+                const appointmentsCollection = collection(db, `artifacts/${getSafeAppId()}/public/data/appointments`);
+                const newAppointment = {
+                    clientName: feedbackClient.name,
+                    phone: feedbackClient.phone,
+                    groupSize: feedbackClient.groupSize || 1,
+                    technician: feedbackData.technician, // Use technician from feedback
+                    date: Timestamp.fromDate(nextAppointmentDate),
+                    notes: `Rebooked from visit on ${new Date().toLocaleDateString()}. Original services: ${feedbackClient.services.join(', ')}`,
+                    services: feedbackClient.services, // Carry over the services from the finished appointment
+                    status: 'booked',
+                    bookingType: 'Rebooked',
+                };
+                await addDoc(appointmentsCollection, newAppointment);
+                alert(`New appointment booked for ${feedbackClient.name} on ${nextAppointmentDate.toLocaleDateString()}`);
+            }
+
             setFeedbackClient(null); // Close modal
         } catch (error) {
-            console.error("Error submitting feedback:", error);
-            alert("Failed to submit feedback.");
+            console.error("Error submitting feedback or rebooking:", error);
+            alert("Failed to submit feedback or rebook appointment.");
         }
     };
 
