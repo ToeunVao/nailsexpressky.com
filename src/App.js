@@ -94,7 +94,7 @@ export default function App() {
                     const userDocRef = doc(db.current, 'users', firebaseUser.uid);
                     const userDocSnap = await getDoc(userDocRef);
                     if (userDocSnap.exists()) {
-                        setUser(firebaseUser);
+                        setUser({ ...firebaseUser, ...userDocSnap.data() });
                         setUserRole(userDocSnap.data().role);
                     } else {
                         console.error("User document not found for UID:", firebaseUser.uid);
@@ -144,7 +144,7 @@ export default function App() {
     }
 
     if (user && userRole) {
-        return <AdminPanel userRole={userRole} auth={auth.current} db={db.current} storage={storage.current} isAuthReady={isAuthReady} />;
+        return <AdminPanel user={user} userRole={userRole} auth={auth.current} db={db.current} storage={storage.current} isAuthReady={isAuthReady} />;
     }
 
     return (
@@ -455,7 +455,7 @@ const LoginModal = ({ auth, db, onClose }) => {
 
 
 // --- Admin Panel Components ---
-const AdminPanel = ({ userRole, auth, db, storage, isAuthReady }) => {
+const AdminPanel = ({ user, userRole, auth, db, storage, isAuthReady }) => {
     const [currentTab, setCurrentTab] = useState('dashboard');
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
     const [bookingDate, setBookingDate] = useState(new Date());
@@ -539,7 +539,7 @@ const AdminPanel = ({ userRole, auth, db, storage, isAuthReady }) => {
                 clearAllNotifications={clearAllNotifications}
             />
             <main className="p-4 sm:p-6 lg:p-8">
-                <TabContent currentTab={currentTab} db={db} storage={storage} isAuthReady={isAuthReady} auth={auth} userRole={userRole} onCalendarDayClick={handleOpenBookingModal} />
+                <TabContent user={user} currentTab={currentTab} db={db} storage={storage} isAuthReady={isAuthReady} auth={auth} userRole={userRole} onCalendarDayClick={handleOpenBookingModal} />
             </main>
             <button onClick={() => handleOpenBookingModal()} className="fixed bottom-8 right-8 bg-pink-600 text-white p-4 rounded-full shadow-lg hover:bg-pink-700 transition-transform transform hover:scale-110">
                 <Icon path="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
@@ -621,20 +621,20 @@ const Navbar = ({ userRole, currentTab, setCurrentTab, onLogout, notifications, 
     );
 };
 
-const TabContent = ({ currentTab, db, storage, isAuthReady, auth, userRole, onCalendarDayClick }) => {
+const TabContent = ({ user, currentTab, db, storage, isAuthReady, auth, userRole, onCalendarDayClick }) => {
     switch (currentTab) {
-        case 'dashboard': return <AdvancedDashboardTab db={db} isAuthReady={isAuthReady} />;
+        case 'dashboard': return <AdvancedDashboardTab user={user} db={db} isAuthReady={isAuthReady} />;
         case 'admin': return <AdminTab db={db} storage={storage} isAuthReady={isAuthReady} auth={auth} />;
         case 'bookings': return <ClientsBookingTab db={db} isAuthReady={isAuthReady} onCalendarDayClick={onCalendarDayClick} />;
         case 'checkIn': return <CheckInTab db={db} isAuthReady={isAuthReady} />;
         case 'clients': return <ClientsTab db={db} isAuthReady={isAuthReady} />;
         case 'salonReport': return <SalonEarningReportTab db={db} storage={storage} isAuthReady={isAuthReady} userRole={userRole} />;
         case 'inventory': return <InventoryManagementTab db={db} storage={storage} isAuthReady={isAuthReady} />;
-        default: return <AdvancedDashboardTab db={db} isAuthReady={isAuthReady} />;
+        default: return <AdvancedDashboardTab user={user} db={db} isAuthReady={isAuthReady} />;
     }
 };
 
-const AdvancedDashboardTab = ({ db, isAuthReady }) => {
+const AdvancedDashboardTab = ({ user, db, isAuthReady }) => {
     const [stats, setStats] = useState({ appointments: 0, services: 0, clients: 0, totalRevenue: 0 });
     const [servicePopularity, setServicePopularity] = useState({});
     const [technicianPerformance, setTechnicianPerformance] = useState({});
@@ -738,24 +738,87 @@ const AdvancedDashboardTab = ({ db, isAuthReady }) => {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-bold text-gray-800">Advanced Dashboard</h1>
+            <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard title="Total Revenue" value={stats.totalRevenue} format={v => `$${v.toFixed(2)}`} icon={<Icon path="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" className="text-pink-600" />} />
                 <StatCard title="Total Appointments" value={stats.appointments} icon={<Icon path="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0h18" className="text-pink-600" />} />
                 <StatCard title="Services Offered" value={stats.services} icon={<Icon path="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" className="text-pink-600" />} />
                 <StatCard title="Total Clients" value={stats.clients} icon={<Icon path="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" className="text-pink-600" />} />
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white p-6 rounded-lg shadow-lg">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                <div className="lg:col-span-3 bg-white p-6 rounded-lg shadow-lg">
                     <h2 className="text-xl font-bold text-gray-800 mb-4">Service Popularity</h2>
                     <Bar data={servicePopularityData} options={{ responsive: true, plugins: { legend: { position: 'top' } } }}/>
                 </div>
-                <div className="bg-white p-6 rounded-lg shadow-lg">
+                <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg">
                     <h2 className="text-xl font-bold text-gray-800 mb-4">Technician Performance</h2>
                     <div className="max-w-xs mx-auto">
                        <Pie data={technicianPerformanceData} options={{ responsive: true, plugins: { legend: { position: 'top' } } }}/>
                     </div>
                 </div>
+            </div>
+            <DailyTaskNote user={user} db={db} />
+        </div>
+    );
+};
+
+const DailyTaskNote = ({ user, db }) => {
+    const [notes, setNotes] = useState([]);
+    const [newNote, setNewNote] = useState('');
+
+    useEffect(() => {
+        if (!user) return;
+
+        let q;
+        if (user.role === 'admin') {
+            q = query(collection(db, `artifacts/${getSafeAppId()}/public/data/dailyNotes`));
+        } else {
+            q = query(collection(db, `artifacts/${getSafeAppId()}/public/data/dailyNotes`), where("uid", "==", user.uid));
+        }
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const notesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setNotes(notesData);
+        });
+
+        return () => unsubscribe();
+    }, [db, user]);
+
+    const handleAddNote = async () => {
+        if (newNote.trim() === '') return;
+
+        await addDoc(collection(db, `artifacts/${getSafeAppId()}/public/data/dailyNotes`), {
+            text: newNote,
+            uid: user.uid,
+            author: user.name || user.email,
+            createdAt: Timestamp.now(),
+        });
+
+        setNewNote('');
+    };
+
+    return (
+        <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Daily Notes</h2>
+            <div className="flex items-center mb-4">
+                <input
+                    type="text"
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    placeholder="Add a new note..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+                <button onClick={handleAddNote} className="ml-2 px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600">Add</button>
+            </div>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+                {notes.map(note => (
+                    <div key={note.id} className="bg-gray-100 p-3 rounded-md">
+                        <p>{note.text}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                            By {note.author} on {note.createdAt.toDate().toLocaleDateString()}
+                        </p>
+                    </div>
+                ))}
             </div>
         </div>
     );
