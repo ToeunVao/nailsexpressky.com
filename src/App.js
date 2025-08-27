@@ -568,7 +568,7 @@ const Navbar = ({ userRole, currentTab, setCurrentTab, onLogout, notifications, 
     }
 
     return (
-        <header className="bg-white shadow-md">
+        <header className="bg-white shadow-md sticky top-0 z-50">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center">
@@ -1785,6 +1785,15 @@ const ClientsTab = ({ db, isAuthReady }) => {
     const [isLoading, setIsLoading] = useState(true);
     const fileInputRef = useRef(null);
 
+    // --- NEW: State for the new client form ---
+    const [newClient, setNewClient] = useState({
+        name: '',
+        phone: '',
+        dob: '',
+        note: ''
+    });
+    const [message, setMessage] = useState('');
+
     useEffect(() => {
         if (!isAuthReady) return;
         let unsubClients, unsubAppointments;
@@ -1812,6 +1821,32 @@ const ClientsTab = ({ db, isAuthReady }) => {
             if (unsubAppointments) unsubAppointments();
         };
     }, [db, isAuthReady]);
+
+    // --- NEW: Function to handle creating a new client ---
+    const handleCreateClient = async (e) => {
+        e.preventDefault();
+        if (!newClient.name || !newClient.phone) {
+            setMessage('Client name and phone are required.');
+            return;
+        }
+        try {
+            await addDoc(collection(db, `artifacts/${getSafeAppId()}/public/data/clients`), {
+                name: newClient.name,
+                phone: newClient.phone,
+                dob: newClient.dob,
+                note: newClient.note,
+                status: 'manual_add', // Custom status
+                createdAt: Timestamp.now()
+            });
+            setMessage('Client created successfully!');
+            setNewClient({ name: '', phone: '', dob: '', note: '' }); // Reset form
+            setTimeout(() => setMessage(''), 3000); // Clear message after 3 seconds
+        } catch (error) {
+            console.error("Error creating client:", error);
+            setMessage('Failed to create client.');
+            alert(`Error: ${error.message}`);
+        }
+    };
 
     const favoriteTechnicians = useMemo(() => {
         const favs = {};
@@ -1843,6 +1878,8 @@ const ClientsTab = ({ db, isAuthReady }) => {
         const dataToExport = clients.map(c => ({
             Name: c.name,
             Phone: c.phone,
+            'Date of Birth': c.dob || 'N/A',
+            'Note': c.note || 'N/A',
             'Favorite Technician': favoriteTechnicians[c.id] || 'N/A'
         }));
         const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -1867,9 +1904,10 @@ const ClientsTab = ({ db, isAuthReady }) => {
                 batch.set(newClientRef, {
                     name: row.Name || '',
                     phone: row.Phone || '',
+                    dob: row['Date of Birth'] || '',
+                    note: row.Note || '',
                     checkInTime: Timestamp.now(),
                     status: 'imported',
-                    // Add other default fields as necessary
                 });
             });
             await batch.commit();
@@ -1879,22 +1917,55 @@ const ClientsTab = ({ db, isAuthReady }) => {
     };
 
     return (
-    <div className="p-6 bg-white rounded-lg shadow">
-        <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-700">All Clients (Check-In History)</h2>
-            <div className="flex space-x-2">
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".xlsx, .xls" />
-                <button onClick={() => fileInputRef.current.click()} className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center">
-                    <Icon path="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m.75 12l3 3m0 0l3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" className="w-5 h-5 mr-2" />
-                    Import
-                </button>
-                <button onClick={handleExportClients} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center">
-                    <Icon path="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9A2.25 2.25 0 0019.5 19.5v-9a2.25 2.25 0 00-2.25-2.25H15M9 12l3 3m0 0l3-3m-3 3V2.25" className="w-5 h-5 mr-2" />
-                    Export
-                </button>
-            </div>
+    <div className="p-6 bg-white rounded-lg shadow space-y-8">
+        {/* --- NEW: Create Client Form --- */}
+        <div>
+            <h2 className="text-xl font-semibold text-gray-700 mb-4">Create New Client</h2>
+            <form onSubmit={handleCreateClient} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Full Name*</label>
+                        <input type="text" value={newClient.name} onChange={e => setNewClient({...newClient, name: e.target.value})} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required/>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Phone*</label>
+                        <input type="tel" value={newClient.phone} onChange={e => setNewClient({...newClient, phone: e.target.value})} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required/>
+                    </div>
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
+                        <input type="date" value={newClient.dob} onChange={e => setNewClient({...newClient, dob: e.target.value})} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"/>
+                    </div>
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700">Client Note</label>
+                        <textarea value={newClient.note} onChange={e => setNewClient({...newClient, note: e.target.value})} rows="3" className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
+                    </div>
+                </div>
+                <div className="flex items-center justify-between">
+                     <button type="submit" className="px-6 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700">
+                        Save Client
+                    </button>
+                    {message && <p className="text-sm text-green-600">{message}</p>}
+                </div>
+            </form>
         </div>
-        {isLoading ? <p>Loading...</p> : (<div className="overflow-x-auto"><table className="min-w-full bg-white"><thead className="bg-gray-50"><tr><th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Name</th><th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Phone</th><th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Favorite Technician</th></tr></thead><tbody className="divide-y divide-gray-200">{clients.map(client => (<tr key={client.id}><td className="py-4 px-6">{client.name}</td><td className="py-4 px-6">{client.phone}</td><td className="py-4 px-6">{favoriteTechnicians[client.id]}</td></tr>))}</tbody></table></div>)}
+
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-700">All Clients (Check-In History)</h2>
+                <div className="flex space-x-2">
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".xlsx, .xls" />
+                    <button onClick={() => fileInputRef.current.click()} className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center">
+                        <Icon path="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m.75 12l3 3m0 0l3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" className="w-5 h-5 mr-2" />
+                        Import
+                    </button>
+                    <button onClick={handleExportClients} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center">
+                        <Icon path="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9A2.25 2.25 0 0019.5 19.5v-9a2.25 2.25 0 00-2.25-2.25H15M9 12l3 3m0 0l3-3m-3 3V2.25" className="w-5 h-5 mr-2" />
+                        Export
+                    </button>
+                </div>
+            </div>
+            {isLoading ? <p>Loading...</p> : (<div className="overflow-x-auto"><table className="min-w-full bg-white"><thead className="bg-gray-50"><tr><th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Name</th><th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Phone</th><th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Favorite Technician</th></tr></thead><tbody className="divide-y divide-gray-200">{clients.map(client => (<tr key={client.id}><td className="py-4 px-6">{client.name}</td><td className="py-4 px-6">{client.phone}</td><td className="py-4 px-6">{favoriteTechnicians[client.id]}</td></tr>))}</tbody></table></div>)}
+        </div>
     </div>
     );
 };
